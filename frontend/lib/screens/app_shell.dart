@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:roundup_app/screens/home_screen.dart';
-import 'package:roundup_app/screens/roundups_screen.dart';
-import 'package:roundup_app/screens/portfolio_screen.dart';
+import 'package:roundup_app/screens/home_screen_enhanced.dart';
+import 'package:roundup_app/screens/roundups_screen_enhanced.dart';
+import 'package:roundup_app/screens/portfolio_screen_enhanced.dart';
 import 'package:roundup_app/screens/settings_screen.dart';
 import 'package:roundup_app/screens/ai_advice_screen.dart';
 
@@ -20,9 +20,9 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
     _pages = const [
-      HomeScreen(),
-      RoundupsScreen(),
-      PortfolioScreen(),
+      HomeScreenEnhanced(),
+      RoundupsScreenEnhanced(),
+      PortfolioScreenEnhanced(),
       SettingsScreen(),
       AiAdviceScreen(),
     ];

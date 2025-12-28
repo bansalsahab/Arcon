@@ -10,6 +10,8 @@ class Transaction(db.Model):
     amount_paise = db.Column(db.Integer, nullable=False)
     currency = db.Column(db.String(3), default="INR")
     merchant = db.Column(db.String(255))
+    description = db.Column(db.String(255))
+    external_transaction_id = db.Column(db.String(255), unique=True, index=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     roundups = db.relationship("Roundup", backref="transaction", lazy=True)
@@ -21,5 +23,7 @@ class Transaction(db.Model):
             "amount_paise": self.amount_paise,
             "currency": self.currency,
             "merchant": self.merchant,
+            "description": self.description,
+            "external_transaction_id": self.external_transaction_id,
             "timestamp": self.timestamp.isoformat(),
         }

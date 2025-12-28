@@ -3,6 +3,7 @@ import 'package:roundup_app/services/api.dart';
 import '../app_shell.dart';
 import 'register_screen.dart';
 import 'package:roundup_app/utils/notifier.dart';
+import 'otp_login_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -86,6 +87,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Register'),
                   )
                 ],
+              )
+              ,
+              const SizedBox(height: 8),
+              Center(
+                child: TextButton(
+                  onPressed: _loading ? null : (){
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_)=> const OTPLoginScreen()));
+                  },
+                  child: const Text('Login with phone OTP'),
+                ),
               )
             ],
           ),

@@ -19,8 +19,18 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
 
+    # JWT blocklist (revocation) callback
+    from .models.token_blocklist import TokenBlocklist  # noqa: E402
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        jti = jwt_payload.get("jti")
+        if not jti:
+            return False
+        return TokenBlocklist.query.filter_by(jti=jti).first() is not None
+
     with app.app_context():
-        from .models import user, transaction, roundup, ledger, mandate, investment, kyc, event
+        from .models import user, transaction, roundup, ledger, mandate, investment, kyc, event, otp_code, phone_account, cap_setting, token_blocklist, user_profile, redemption
         db.create_all()
 
     swagger_template = {
@@ -55,6 +65,7 @@ def create_app():
             {"name": "Scheduler"},
             {"name": "AI"},
             {"name": "Notifications"},
+            {"name": "Compliance"},
         ],
     }
 
@@ -88,7 +99,10 @@ def create_app():
     from .routes.allocations import allocations_bp
     from .routes.events import events_bp
     from .routes.notifications import notifications_bp
+    from .routes.compliance import compliance_bp
+    from .routes.caps import caps_bp
     from .routes.scheduler import scheduler_bp
+    from .routes.webhooks import webhooks_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(transactions_bp)
@@ -104,6 +118,9 @@ def create_app():
     app.register_blueprint(events_bp)
     app.register_blueprint(scheduler_bp)
     app.register_blueprint(notifications_bp)
+    app.register_blueprint(compliance_bp)
+    app.register_blueprint(caps_bp)
+    app.register_blueprint(webhooks_bp)
 
     @app.get("/api/health")
     def health():

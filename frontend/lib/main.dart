@@ -1,61 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:roundup_app/screens/auth/otp_login_screen.dart';
+import 'package:roundup_app/screens/app_shell.dart';
 import 'package:roundup_app/services/api.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/app_shell.dart';
-import 'theme/banking_theme.dart';
-import 'utils/notifier.dart';
+import 'package:roundup_app/theme/banking_theme.dart';
+import 'package:roundup_app/utils/notifier.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {
+    debugPrint('Could not load .env file, using defaults');
+  }
+  
+  runApp(const RoundupApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class RoundupApp extends StatelessWidget {
+  const RoundupApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Roundup App',
-      theme: bankingTheme(),
-      home: const _AuthGate(),
+      title: 'Roundup Investment App',
+      theme: finPadiTheme(),
       debugShowCheckedModeBanner: false,
+      home: const AuthGate(),
       scaffoldMessengerKey: Notifier.messengerKey,
     );
   }
 }
 
-class _AuthGate extends StatefulWidget {
-  const _AuthGate({Key? key}) : super(key: key);
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
   @override
-  State<_AuthGate> createState() => _AuthGateState();
+  State<AuthGate> createState() => _AuthGateState();
 }
 
-class _AuthGateState extends State<_AuthGate> {
-  bool _checking = true;
-  bool _loggedIn = false;
+class _AuthGateState extends State<AuthGate> {
+  bool? _isAuthenticated;
 
   @override
   void initState() {
     super.initState();
-    _check();
+    _checkAuth();
   }
 
-  Future<void> _check() async {
-    final ok = await ApiClient.isLoggedIn();
-    if (!mounted) return;
-    setState(() {
-      _loggedIn = ok;
-      _checking = false;
-    });
+  Future<void> _checkAuth() async {
+    try {
+      await ApiClient.me();
+      if (mounted) setState(() => _isAuthenticated = true);
+    } catch (_) {
+      if (mounted) setState(() => _isAuthenticated = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_checking) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+    if (_isAuthenticated == null) {
+      return Scaffold(
+        backgroundColor: FinPadi_Background,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: FinPadi_NavyBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 48,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(FinPadi_NavyBlue),
+              ),
+            ],
+          ),
+        ),
       );
     }
-    return _loggedIn ? const AppShell() : const LoginScreen();
+
+    if (_isAuthenticated!) {
+      return const AppShell();
+    }
+
+    return const OTPLoginScreen();
   }
 }

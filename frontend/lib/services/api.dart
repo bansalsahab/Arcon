@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiClient {
-  static const String apiBase = 'http://192.168.29.132:5000'; // Update if needed
+  static String get apiBase => dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:5000';
 
   static Future<SharedPreferences> _prefs() => SharedPreferences.getInstance();
 
@@ -12,10 +13,133 @@ class ApiClient {
     return p.getString('access_token');
   }
 
+  // Phone OTP auth
+  static Future<Map<String, dynamic>> requestOtp(String phone) async {
+    final res = await http.post(
+      Uri.parse('$apiBase/api/auth/request-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone}),
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<void> verifyOtp(String phone, String code) async {
+    final res = await http.post(
+      Uri.parse('$apiBase/api/auth/verify-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone, 'code': code}),
+    );
+    final data = await _handleResponse(res);
+    await saveTokens(data['access_token'], data['refresh_token']);
+  }
+
+  // Logout (revoke tokens)
+  static Future<void> logout() async {
+    try {
+      final at = await accessToken;
+      if (at != null) {
+        await http.post(
+          Uri.parse('$apiBase/api/auth/logout/access'),
+          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $at'},
+        );
+      }
+    } catch (_) {}
+
+    try {
+      final rt = await refreshToken;
+      if (rt != null) {
+        await http.post(
+          Uri.parse('$apiBase/api/auth/logout/refresh'),
+          headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $rt'},
+        );
+      }
+    } catch (_) {}
+    await clearTokens();
+  }
+
+  // Caps (pause / limits)
+  static Future<Map<String, dynamic>> getCaps() async {
+    final res = await http.get(
+      Uri.parse('$apiBase/api/user/caps'),
+      headers: await _authHeaders(includeContentType: false),
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> updateCaps({bool? investingPaused, int? dailyCapPaise, int? monthlyCapPaise}) async {
+    final body = <String, dynamic>{};
+    if (investingPaused != null) body['investing_paused'] = investingPaused;
+    if (dailyCapPaise != null) body['daily_cap_paise'] = dailyCapPaise;
+    if (monthlyCapPaise != null) body['monthly_cap_paise'] = monthlyCapPaise;
+    final res = await http.patch(
+      Uri.parse('$apiBase/api/user/caps'),
+      headers: await _authHeaders(),
+      body: jsonEncode(body),
+    );
+    return _handleResponse(res);
+  }
+
+  // Compliance
+  static Future<Map<String, dynamic>> acceptCompliance(String type) async {
+    final res = await http.post(
+      Uri.parse('$apiBase/api/compliance/accept'),
+      headers: await _authHeaders(),
+      body: jsonEncode({'type': type}),
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<List<dynamic>> complianceHistory() async {
+    final res = await http.get(
+      Uri.parse('$apiBase/api/compliance/history'),
+      headers: await _authHeaders(includeContentType: false),
+    );
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return _handleResponse(res) as List<dynamic>;
+  }
+
+  // Investments list
+  static Future<List<dynamic>> listInvestments({int limit = 100, int offset = 0}) async {
+    final uri = Uri.parse('$apiBase/api/investments').replace(queryParameters: {
+      'limit': '$limit',
+      'offset': '$offset',
+    });
+    final res = await http.get(uri, headers: await _authHeaders(includeContentType: false));
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return _handleResponse(res) as List<dynamic>;
+  }
+
+  // Redemption
+  static Future<Map<String, dynamic>> redeem({required int amountPaise, String productType = 'mf'}) async {
+    final res = await http.post(
+      Uri.parse('$apiBase/api/investments/redeem'),
+      headers: await _authHeaders(),
+      body: jsonEncode({'amount_paise': amountPaise, 'product_type': productType}),
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<List<dynamic>> listRedemptions({int limit = 100, int offset = 0}) async {
+    final uri = Uri.parse('$apiBase/api/investments/redemptions').replace(queryParameters: {
+      'limit': '$limit',
+      'offset': '$offset',
+    });
+    final res = await http.get(uri, headers: await _authHeaders(includeContentType: false));
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    return _handleResponse(res) as List<dynamic>;
+  }
+
   static Future<Map<String, dynamic>> createMandate() async {
     final res = await http.post(
       Uri.parse('$apiBase/api/mandates'),
       headers: await _authHeaders(),
+      body: jsonEncode({}), // Send empty JSON object as body
     );
     return _handleResponse(res);
   }
@@ -29,10 +153,18 @@ class ApiClient {
     return _handleResponse(res);
   }
 
+  static Future<Map<String, dynamic>> executeAllocated() async {
+    final res = await http.post(
+      Uri.parse('$apiBase/api/investments/execute/allocated'),
+      headers: await _authHeaders(),
+    );
+    return _handleResponse(res);
+  }
+
   static Future<Map<String, dynamic>> getSettings() async {
     final res = await http.get(
       Uri.parse('$apiBase/api/user/settings'),
-      headers: await _authHeaders(),
+      headers: await _authHeaders(includeContentType: false),
     );
     return _handleResponse(res);
   }
@@ -74,9 +206,10 @@ class ApiClient {
     return t != null && t.isNotEmpty;
   }
 
-  static Future<Map<String, String>> _authHeaders() async {
+  static Future<Map<String, String>> _authHeaders({bool includeContentType = true}) async {
     final token = await accessToken;
-    final h = <String, String>{'Content-Type': 'application/json'};
+    final h = <String, String>{};
+    if (includeContentType) h['Content-Type'] = 'application/json';
     if (token != null) h['Authorization'] = 'Bearer $token';
     return h;
   }
@@ -141,7 +274,7 @@ class ApiClient {
     Future<Map<String, dynamic>> doRequest() async {
       final res = await http.get(
         Uri.parse('$apiBase/api/auth/me'),
-        headers: await _authHeaders(),
+        headers: await _authHeaders(includeContentType: false),
       );
       if (res.statusCode == 401 || res.statusCode == 422) {
         throw Exception('Auth');
@@ -163,7 +296,7 @@ class ApiClient {
   static Future<Map<String, dynamic>> pendingRoundups() async {
     final res = await http.get(
       Uri.parse('$apiBase/api/roundups/pending'),
-      headers: await _authHeaders(),
+      headers: await _authHeaders(includeContentType: false),
     );
     return _handleResponse(res);
   }
@@ -171,7 +304,7 @@ class ApiClient {
   static Future<Map<String, dynamic>> portfolio() async {
     final res = await http.get(
       Uri.parse('$apiBase/api/portfolio'),
-      headers: await _authHeaders(),
+      headers: await _authHeaders(includeContentType: false),
     );
     return _handleResponse(res);
   }
@@ -181,7 +314,7 @@ class ApiClient {
       'limit': '$limit',
       'offset': '$offset',
     });
-    final res = await http.get(uri, headers: await _authHeaders());
+    final res = await http.get(uri, headers: await _authHeaders(includeContentType: false));
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return jsonDecode(res.body) as List<dynamic>;
     }
@@ -210,7 +343,7 @@ class ApiClient {
   static Future<List<dynamic>> listMandates() async {
     final res = await http.get(
       Uri.parse('$apiBase/api/mandates'),
-      headers: await _authHeaders(),
+      headers: await _authHeaders(includeContentType: false),
     );
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return jsonDecode(res.body) as List<dynamic>;
@@ -246,7 +379,7 @@ class ApiClient {
   static Future<Map<String, dynamic>> kycGet() async {
     final res = await http.get(
       Uri.parse('$apiBase/api/kyc'),
-      headers: await _authHeaders(),
+      headers: await _authHeaders(includeContentType: false),
     );
     return _handleResponse(res);
   }
@@ -272,7 +405,7 @@ class ApiClient {
   static Future<List<dynamic>> listNotifications({int limit = 100}) async {
     final res = await http.get(
       Uri.parse('$apiBase/api/notifications'),
-      headers: await _authHeaders(),
+      headers: await _authHeaders(includeContentType: false),
     );
     if (res.statusCode >= 200 && res.statusCode < 300) {
       return jsonDecode(res.body) as List<dynamic>;

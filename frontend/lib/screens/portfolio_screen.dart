@@ -17,6 +17,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   int _pending = 0;
   int _invested = 0;
   Map<String, dynamic> _positions = {};
+  List<dynamic> _redemptions = [];
+  bool _redeeming = false;
 
   @override
   void initState() {
@@ -28,10 +30,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     setState(() => _loading = true);
     try {
       final port = await ApiClient.portfolio();
+      final reds = await ApiClient.listRedemptions(limit: 50);
       setState(() {
         _pending = (port['pending_roundups_paise'] as num?)?.toInt() ?? 0;
         _invested = (port['invested_total_paise'] as num?)?.toInt() ?? 0;
         _positions = (port['positions_paise'] as Map?)?.cast<String, dynamic>() ?? {};
+        _redemptions = reds;
       });
     } catch (e) {
       if (!mounted) return; Notifier.error(e.toString(), error: e);
@@ -40,10 +44,67 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     }
   }
 
+  Future<void> _showRedeemDialog() async {
+    final ctl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Redeem'),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: ctl,
+              decoration: const InputDecoration(labelText: 'Amount (₹)'),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              validator: (v){
+                if (v==null || v.trim().isEmpty) return 'Enter amount';
+                final d = double.tryParse(v.trim());
+                if (d==null || d<=0) return 'Enter valid amount';
+                return null;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: _redeeming ? null : () async {
+                if (!formKey.currentState!.validate()) return;
+                final d = double.parse(ctl.text.trim());
+                setState(() => _redeeming = true);
+                try {
+                  await ApiClient.redeem(amountPaise: (d*100).round());
+                  Notifier.success('Redemption placed');
+                  if (mounted) Navigator.of(ctx).pop();
+                  await _load();
+                } catch (e) {
+                  Notifier.error(e.toString(), error: e);
+                } finally {
+                  if (mounted) setState(() => _redeeming = false);
+                }
+              },
+              child: _redeeming ? const SizedBox(height:20,width:20,child:CircularProgressIndicator(strokeWidth:2)) : const Text('Redeem'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Portfolio')),
+      appBar: AppBar(
+        title: const Text('Portfolio'),
+        actions: [
+          IconButton(
+            onPressed: _loading ? null : _showRedeemDialog,
+            icon: const Icon(Icons.outbound),
+            tooltip: 'Redeem',
+          )
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -76,6 +137,24 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 trailing: Text(_fmt.format(v/100.0), style: const TextStyle(fontWeight: FontWeight.w600)),
               );
             }),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 8),
+            Text('Redemptions', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (_loading && _redemptions.isEmpty) ...Skeleton.tiles(5)
+            else if (_redemptions.isEmpty) const Text('No redemptions yet.')
+            else ..._redemptions.map((r){
+              final amt = (r['amount_paise'] as num?)?.toInt() ?? 0;
+              final status = r['status']?.toString() ?? '';
+              final at = r['created_at']?.toString() ?? '';
+              return ListTile(
+                leading: const Icon(Icons.account_balance_wallet_outlined),
+                title: Text(_fmt.format(amt/100.0)),
+                subtitle: Text(at),
+                trailing: Text(status.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w600)),
+              );
+            })
           ],
         ),
       ),
