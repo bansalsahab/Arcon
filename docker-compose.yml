@@ -1,39 +1,31 @@
 version: '3.8'
-services:
-  db:
-    image: postgres:15
-    container_name: roundup_db
-    environment:
-      POSTGRES_DB: roundup
-      POSTGRES_USER: roundup
-      POSTGRES_PASSWORD: roundup
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U roundup -d roundup"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
+services:
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: roundup_backend
-    env_file:
-      - .env
-    environment:
-      # Override DB for containerized env
-      - DATABASE_URL=postgresql+psycopg2://roundup:roundup@db:5432/roundup
-    depends_on:
-      db:
-        condition: service_healthy
+      context: ./backend
+    container_name: arcon-backend
     ports:
       - "5000:5000"
-    command: gunicorn -w 4 -b 0.0.0.0:5000 backend.app:app
-    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      # Add other env vars here or use env_file
+    volumes:
+      - ./backend:/app # Optional: for dev consistency (mounts code)
+    networks:
+      - arcon-network
 
-volumes:
-  pgdata:
+  frontend:
+    build:
+      context: ./frontend
+    container_name: arcon-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - arcon-network
+
+networks:
+  arcon-network:
+    driver: bridge

@@ -3,7 +3,6 @@
 **Arcon** is a modern, compliant micro-investing application designed to help users grow their wealth effortlessly. By automatically investing "spare change" from everyday digital transactions, Arcon makes financial growth accessible to everyone.
 
 ![Banner Image](https://placehold.co/1200x400?text=Arcon+Micro-Investing) 
-*(Replace with actual app screenshot/banner)*
 
 ---
 
@@ -104,6 +103,35 @@ Instead of reacting to every transaction individually, Arcon uses a smart aggreg
 
 ---
 
+## ☁️ Cloud-Native Infrastructure (DevOps)
+
+Arcon utilizes a modern, containerized architecture orchestrated by Kubernetes.
+
+### The Stack
+*   **Containerization**: Docker (Multi-stage builds for frontend).
+*   **Orchestration**: Kubernetes (Deployments, Services, Ingress).
+*   **CI/CD**: Jenkins (Build/Push) + ArgoCD (GitOps Deployment).
+
+### CI/CD Pipeline Flow
+```mermaid
+graph LR
+    A[Developer Push] --> B[GitHub]
+    B -->|Trigger| C[Jenkins CI]
+    C -->|Build & Push| D[Docker Hub]
+    C -->|Update Tag| E[K8s Manifests Repo]
+    E -->|Sync| F[ArgoCD]
+    F -->|Deploy| G[Kubernetes Cluster]
+    subgraph Cluster [Production Cluster]
+        G --> Service[LoadBalancer]
+        Service --> Pods[App Pods]
+    end
+```
+
+### Setup Guide
+For detailed instructions on running the Docker containers locally or deploying to K8s, refer to the [DevOps Walkthrough](docs/devops.md).
+
+---
+
 ## 🔒 Security & Privacy
 
 *   **Bank-Grade Security**: All API traffic is encrypted.
@@ -112,4 +140,4 @@ Instead of reacting to every transaction individually, Arcon uses a smart aggreg
 
 ---
 
-© 2026 Arcon / FinPadi. All Rights Reserved.
+© 2026 Arcon. All Rights Reserved.

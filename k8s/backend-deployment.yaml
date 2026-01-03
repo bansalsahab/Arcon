@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arcon-backend
+  labels:
+    app: arcon-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: arcon-backend
+  template:
+    metadata:
+      labels:
+        app: arcon-backend
+    spec:
+      containers:
+      - name: backend
+        image: bansalsahab/arcon-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        env:
+        - name: FLASK_ENV
+          value: "production"
+        # Secrets should ideally be pulled from K8s Secrets
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: arcon-secrets
+              key: database-url
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: arcon-backend
+spec:
+  selector:
+    app: arcon-backend
+  ports:
+  - protocol: TCP
+    port: 5000
+    targetPort: 5000
+  type: ClusterIP

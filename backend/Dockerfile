@@ -1,23 +1,31 @@
-# syntax=docker/dockerfile:1
+# Backend Dockerfile
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-
+# Set working directory
 WORKDIR /app
 
-# Install build deps for psycopg2-binary (manylinux wheels, but keep basic tools)
+# Install system dependencies (e.g., for psycopg2 if needed later)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    gcc \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Copy requirements
+COPY requirements.txt .
 
-COPY backend /app/backend
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install gunicorn
 
+# Copy application code
+COPY . .
+
+# Set environment variables
+ENV FLASK_APP=app.py
+ENV PYTHONUNBUFFERED=1
+
+# Expose port
 EXPOSE 5000
-ENV FLASK_ENV=production
 
-# Default: run with gunicorn
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "backend.app:app"]
+# Run with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app", "--workers", "3", "--access-logfile", "-"]
