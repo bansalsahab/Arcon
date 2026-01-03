@@ -38,7 +38,35 @@ Instead of reacting to every transaction individually, Arcon uses a smart aggreg
 
 ---
 
-## 🚀 Key Features
+## � User Story: Parth's Journey
+
+Let's see exactly how Arcon works for a user named **Parth**.
+
+```mermaid
+graph TD
+    subgraph Onboarding
+        Start([Parth Downloads App]) --> KYC[Verify KYC]
+        KYC --> Mandate[Set UPI AutoPay Mandate<br/>Max ₹5000/month]
+    end
+
+    subgraph Daily_Life [Parth's Daily Life]
+        Coffee[Parth buys Coffee: ₹247] -->|Round Up to ₹250| Calc1(App tracks: ₹3)
+        Lunch[Parth buys Lunch: ₹118] -->|Round Up to ₹120| Calc2(App tracks: ₹2)
+        Calc1 & Calc2 --> Total(Daily Total: ₹5)
+    end
+
+    subgraph Automated_Investing [Arcon Logic]
+        Total -->|Next Morning| Debit[UPI AutoPay Debit: ₹5]
+        Debit -->|Invest| Portfolio[Gold/Equity Portfolio]
+        Portfolio -->|Notify| Alert[Parth gets Notification:<br/>'₹5 Invested!']
+    end
+
+    Mandate -.-> Debit
+```
+
+---
+
+## �🚀 Key Features
 
 *   **Auto-Invest Status**: Clear, color-coded indicators (Active, Paused, Action Required) so you always know your standing.
 *   **Smart Contextual Experience**: The home screen adapts to your journey—prompting KYC only when needed, showing portfolio value when active.
