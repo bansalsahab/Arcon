@@ -46,15 +46,16 @@ def create_mandate():
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
 
-    # Max per-debit amount in paise (default ₹500)
+    # Max per-debit amount in paise (default ₹5000 to match UI)
     try:
-        max_amount_paise = int(data.get("max_amount_paise") or 50000)
+        max_amount_paise = int(data.get("max_amount_paise") or 500000)
         if max_amount_paise <= 0:
             return jsonify({"error": "max_amount_paise must be > 0"}), 400
     except (TypeError, ValueError):
         return jsonify({"error": "max_amount_paise must be integer"}), 400
 
-    frequency = (data.get("frequency") or "daily").lower()
+    # Default to weekly because Razorpay daily mandates require min 7 day interval
+    frequency = (data.get("frequency") or "weekly").lower()
     if frequency not in {"daily", "weekly", "monthly"}:
         return jsonify({"error": "frequency must be one of daily, weekly, monthly"}), 400
 
@@ -102,6 +103,14 @@ def create_mandate():
     if resp.get("status"):
         m.status = str(resp["status"]).lower()
     
+    # Check if creation failed
+    if m.status == "failed" or resp.get("error"):
+        db.session.commit() # Save the failed mandate record for debugging
+        return jsonify({
+            "error": "Mandate creation failed", 
+            "details": resp.get("error", "Unknown provider error")
+        }), 400
+
     # Store auth_link for frontend to redirect to UPI app
     m.auth_link = resp.get("auth_link")
     

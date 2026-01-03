@@ -8,6 +8,7 @@ import 'package:roundup_app/utils/notifier.dart';
 import 'package:roundup_app/widgets/compliance_disclaimer.dart';
 import 'package:roundup_app/screens/mandates_screen.dart';
 import 'package:roundup_app/screens/settings_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RoundupsScreenEnhanced extends StatefulWidget {
   const RoundupsScreenEnhanced({super.key});
@@ -54,14 +55,105 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
   }
 
   Future<void> _createMandate() async {
+    // Show confirmation dialog first
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Enable UPI AutoPay?', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Automate your roundup investments with UPI AutoPay:', style: GoogleFonts.outfit(fontSize: 14)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.check_circle, color: Banking_Primary, size: 16),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Daily auto-debits up to ₹500', style: GoogleFonts.outfit(fontSize: 13))),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(Icons.check_circle, color: Banking_Primary, size: 16),
+                const SizedBox(width: 8),
+                Expanded(child: Text('24h notice before each debit', style: GoogleFonts.outfit(fontSize: 13))),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(Icons.check_circle, color: Banking_Primary, size: 16),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Cancel anytime', style: GoogleFonts.outfit(fontSize: 13))),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Not Now', style: GoogleFonts.outfit()),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Banking_Primary, foregroundColor: Colors.white),
+            child: Text('Continue', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _loading = true);
     try {
-      await ApiClient.createMandate();
+      final response = await ApiClient.createMandate();
       if (!mounted) return;
-      Notifier.success('UPI mandate created successfully');
-      _load();
+
+      final authLink = response['auth_link'] as String?;
+      if (authLink != null && authLink.isNotEmpty) {
+        // Real Razorpay flow
+        final uri = Uri.parse(authLink);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          
+          if (!mounted) return;
+          // Show follow-up dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: Text('Approve in UPI App', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+              content: Text(
+                'Your UPI app (GPay/PhonePe/Paytm) should open now. Please approve the AutoPay mandate to activate auto-investing.',
+                style: GoogleFonts.outfit(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    _load(); // Refresh to check updated status
+                  },
+                  child: Text('Done', style: GoogleFonts.outfit(color: Banking_Primary)),
+                ),
+              ],
+            ),
+          );
+        } else {
+          Notifier.error('Could not open UPI app. Try manually from Mandates screen.');
+        }
+      } else {
+        // Mock provider or error
+        Notifier.success('UPI mandate created');
+        await _load();
+      }
     } catch (e) {
       if (!mounted) return;
       Notifier.error(e.toString(), error: e);
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -161,50 +253,63 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: Banking_app_Background,
+      backgroundColor: FinPadi_Background,
       appBar: AppBar(
-        title: Text('Roundups', style: GoogleFonts.outfit(color: Banking_TextColorPrimary, fontWeight: FontWeight.bold)),
-        backgroundColor: Banking_app_Background,
+        title: Text('Roundups', style: theme.textTheme.titleLarge),
+        backgroundColor: FinPadi_Background,
         centerTitle: true,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Banking_TextColorPrimary),
+        iconTheme: const IconThemeData(color: FinPadi_MidnightBlue),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.assignment_turned_in_outlined),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MandatesScreen()),
-              );
-            },
-            tooltip: 'View Mandates',
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.assignment_turned_in_outlined, size: 20),
+              color: FinPadi_MidnightBlue,
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MandatesScreen()),
+                );
+              },
+              tooltip: 'View Mandates',
+            ),
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           children: [
             if (_paused)
               Container(
                 padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.only(bottom: 16),
+                margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
-                  color: Banking_ErrorRed.withOpacity(0.1),
+                  color: FinPadi_Error.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Banking_ErrorRed.withOpacity(0.3)),
+                  border: Border.all(color: FinPadi_Error.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.pause_circle_outline, color: Banking_ErrorRed),
+                    const Icon(Icons.pause_circle_outline, color: FinPadi_Error),
                     const SizedBox(width: 12),
-                    Expanded(child: Text('Investing is currently paused.', style: GoogleFonts.outfit(color: Banking_ErrorRed, fontWeight: FontWeight.w600))),
+                    Expanded(child: Text('Investing is currently paused.', style: GoogleFonts.inter(color: FinPadi_Error, fontWeight: FontWeight.w600))),
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
                       },
-                      child: Text('Settings', style: GoogleFonts.outfit(color: Banking_ErrorRed, fontWeight: FontWeight.bold)),
+                      child: Text('Settings', style: GoogleFonts.outfit(color: FinPadi_Error, fontWeight: FontWeight.bold)),
                     )
                   ],
                 ),
@@ -212,46 +317,71 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
             
             if (!_hasActiveMandate)
               Container(
-                padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: Banking_WarningYellow.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Banking_WarningYellow.withOpacity(0.4)),
+                  color: const Color(0xFFFFF7ED), // Amber-50
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFFDBA74).withOpacity(0.5)), // Amber-300
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFFEA580C).withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4)),
+                  ],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Banking_WarningYellow),
-                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF97316).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.bolt_rounded, color: Color(0xFFEA580C)),
+                    ),
+                    const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        'No active AutoPay mandate found.',
-                        style: GoogleFonts.outfit(color: const Color(0xFFB56A00), fontWeight: FontWeight.w600),
-                      )
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Supercharge your savings',
+                            style: GoogleFonts.outfit(color: const Color(0xFF9A3412), fontWeight: FontWeight.bold, fontSize: 13), // Orange-900
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Enable AutoPay to invest automatically.',
+                            style: GoogleFonts.inter(color: const Color(0xFFEA580C), fontSize: 13), // Orange-600
+                          ),
+                        ],
+                      ),
                     ),
                     TextButton(
                       onPressed: _loading ? null : _createMandate,
-                      child: Text('Setup', style: GoogleFonts.outfit(color: const Color(0xFFB56A00), fontWeight: FontWeight.bold)),
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text('Enable', style: GoogleFonts.outfit(color: const Color(0xFFEA580C), fontWeight: FontWeight.bold)),
                     )
                   ],
                 ),
               ),
               
-            // Pending Amount Card
+            // Pending Amount Card (Hero)
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Banking_SuccessGreen, Color(0xFF69C06D)],
+                  colors: [FinPadi_ElectricTeal, Color(0xFF0284C7)], // Cyan-500 to Sky-600
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Banking_SuccessGreen.withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
+                    color: FinPadi_ElectricTeal.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -261,49 +391,68 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
-                          Icons.savings_outlined,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                        child: const Icon(Icons.savings_outlined, color: Colors.white, size: 20),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Pending Roundups',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        style: GoogleFonts.inter(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                   _loading
                       ? const SizedBox(
                           height: 48,
                           width: 48,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : Text(
-                          _fmt.format(_totalPaise / 100.0),
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
+                      : RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '₹',
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              TextSpan(
+                                text: _fmt.format(_totalPaise / 100.0).replaceAll('₹', ''),
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Ready to invest • ${_items.length} transactions',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 14,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Ready to invest • ${_items.length} items',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -315,36 +464,45 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: _loading ? null : _createMandate,
-                    icon: const Icon(Icons.add_card, size: 20),
-                    label: const Text('Setup UPI'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Banking_Secondary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                      backgroundColor: Colors.white,
+                      foregroundColor: FinPadi_MidnightBlue,
                       elevation: 0,
+                      side: BorderSide(color: FinPadi_Border.withOpacity(0.8)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_card, size: 18, color: FinPadi_TextSecondary),
+                        const SizedBox(width: 8),
+                        Text('Setup UPI', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: FinPadi_TextPrimary)),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: _loading || _paused || !_hasActiveMandate ? null : _execute,
-                    icon: const Icon(Icons.rocket_launch, size: 20),
-                    label: const Text('Invest Now'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Banking_Primary,
+                      backgroundColor: FinPadi_MidnightBlue,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
                       elevation: 4,
-                      shadowColor: Banking_Primary.withOpacity(0.4),
+                      shadowColor: FinPadi_MidnightBlue.withOpacity(0.3),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Row(
+                       mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.rocket_launch_rounded, size: 18),
+                        const SizedBox(width: 8),
+                        Text('Invest Now', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                      ],
                     ),
                   ),
                 ),
@@ -353,17 +511,21 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: _loading || _paused || !_hasActiveMandate ? null : _executeAllocated,
-                icon: const Icon(Icons.pie_chart_outline, size: 20),
-                label: const Text('Invest by Smart Allocation'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Banking_Primary,
-                  side: const BorderSide(color: Banking_Primary),
+                  foregroundColor: FinPadi_ElectricTeal,
+                  side: const BorderSide(color: FinPadi_ElectricTeal),
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.pie_chart_outline, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Invest by Smart Allocation', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+                  ],
                 ),
               ),
             ),
@@ -384,18 +546,15 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
               children: [
                 Text(
                   'Roundup History',
-                  style: GoogleFonts.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Banking_TextColorPrimary,
-                  ),
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 if (_items.isNotEmpty)
                   Text(
                     '${_items.length} items',
-                    style: GoogleFonts.outfit(
-                      color: Banking_TextColorSecondary,
+                    style: GoogleFonts.inter(
+                      color: FinPadi_TextSecondary,
                       fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
               ],
@@ -408,23 +567,33 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
                 padding: const EdgeInsets.all(40),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Banking_Border),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: FinPadi_Border.withOpacity(0.5)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
                 ),
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.add_chart_outlined,
-                          size: 48, color: Banking_TextColorSecondary.withOpacity(0.3)),
-                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: FinPadi_Background,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.add_chart_outlined, size: 32, color: FinPadi_TextSecondary.withOpacity(0.5)),
+                      ),
+                      const SizedBox(height: 16),
                       Text(
                         'No pending roundups',
-                        style: GoogleFonts.outfit(color: Banking_TextColorSecondary, fontSize: 16),
+                        style: GoogleFonts.inter(color: FinPadi_TextPrimary, fontSize: 16, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your spare change will appear here',
-                        style: GoogleFonts.outfit(color: Banking_TextColorSecondary.withOpacity(0.6), fontSize: 13),
+                        'Your spare change transaction roundups\nwill appear here automatically.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(color: FinPadi_TextSecondary, fontSize: 13, height: 1.5),
                       ),
                     ],
                   ),
@@ -442,27 +611,27 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.03),
-                        blurRadius: 8,
+                        blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
                     ],
-                    border: Border.all(color: Banking_Border.withOpacity(0.5)),
+                    border: Border.all(color: FinPadi_Border.withOpacity(0.6)),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Banking_SuccessGreen.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                          color: FinPadi_Background,
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Banking_SuccessGreen,
+                        child: Icon(
+                          Icons.add_rounded,
+                          color: FinPadi_Success,
                           size: 20,
                         ),
                       ),
@@ -473,20 +642,22 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
                           children: [
                             Text(
                               'Roundup #$txId',
-                              style: GoogleFonts.outfit(
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
-                                color: Banking_TextColorPrimary,
+                                color: FinPadi_TextPrimary,
                               ),
                             ),
-                            if (ts.isNotEmpty)
-                              Text(
+                            if (ts.isNotEmpty) ...[
+                             const SizedBox(height: 4),
+                             Text(
                                 ts,
-                                style: GoogleFonts.outfit(
-                                  color: Banking_TextColorSecondary,
+                                style: GoogleFonts.inter(
+                                  color: FinPadi_TextSecondary,
                                   fontSize: 12,
                                 ),
                               ),
+                            ],
                           ],
                         ),
                       ),
@@ -495,7 +666,7 @@ class _RoundupsScreenEnhancedState extends State<RoundupsScreenEnhanced> {
                         style: GoogleFonts.outfit(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Banking_SuccessGreen,
+                          color: FinPadi_Success,
                         ),
                       ),
                     ],

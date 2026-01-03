@@ -3,7 +3,7 @@ import 'package:roundup_app/screens/home_screen_enhanced.dart';
 import 'package:roundup_app/screens/roundups_screen_enhanced.dart';
 import 'package:roundup_app/screens/portfolio_screen_enhanced.dart';
 import 'package:roundup_app/screens/settings_screen.dart';
-import 'package:roundup_app/screens/ai_advice_screen.dart';
+import 'package:roundup_app/screens/profile_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -24,7 +24,7 @@ class _AppShellState extends State<AppShell> {
       RoundupsScreenEnhanced(),
       PortfolioScreenEnhanced(),
       SettingsScreen(),
-      AiAdviceScreen(),
+      ProfileScreen(),
     ];
   }
 
@@ -41,7 +41,7 @@ class _AppShellState extends State<AppShell> {
           BottomNavigationBarItem(icon: Icon(Icons.savings_outlined), label: 'Roundups'),
           BottomNavigationBarItem(icon: Icon(Icons.pie_chart_outline), label: 'Portfolio'),
           BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
-          BottomNavigationBarItem(icon: Icon(Icons.psychology_outlined), label: 'AI'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
         ],
       ),
     );

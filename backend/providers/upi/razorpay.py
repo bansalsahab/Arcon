@@ -100,12 +100,23 @@ class RazorpayUPIProvider(UPIProvider):
             }
         
         # Create Subscription (Mandate)
+        # Calculate start_at timestamp
+        # Razorpay requires start_at to be in the future
+        now = datetime.now()
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        
+        # If calculated start time is in the past (e.g. today 00:00), use now + 5 mins
+        if start_dt <= now:
+            start_dt = now + timedelta(minutes=5)
+        
+        start_at_ts = int(start_dt.timestamp())
+
         subscription_data = {
             "plan_id": plan_id,
             "customer_notify": 1,  # Razorpay sends SMS/email to customer
             "quantity": 1,
             "total_count": total_count,
-            "start_at": int(datetime.combine(start_date, datetime.min.time()).timestamp()),
+            "start_at": start_at_ts,
             "notes": {
                 "internal_mandate_id": str(internal_mandate_id),
                 "user_id": str(user_id),

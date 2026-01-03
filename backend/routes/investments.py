@@ -204,3 +204,44 @@ def list_redemptions():
         .all()
     )
     return jsonify([e.to_dict() for e in items])
+
+@investments_bp.get("/monthly-summary")
+@jwt_required()
+def monthly_summary():
+    """
+    ---
+    tags: [Investments]
+    summary: Get monthly investment summary
+    security:
+      - BearerAuth: []
+    responses:
+      200:
+        description: Monthly summary stats
+    """
+    from datetime import datetime
+    user_id = int(get_jwt_identity())
+    now = datetime.utcnow()
+    start_of_month = datetime(now.year, now.month, 1)
+
+    # Check for invested roundups this month
+    stats = (
+        db.session.query(
+            db.func.sum(Roundup.amount_paise).label("total"),
+            db.func.count(Roundup.id).label("count")
+        )
+        .filter(
+            Roundup.user_id == user_id,
+            Roundup.status == "invested",
+            Roundup.created_at >= start_of_month
+        )
+        .first()
+    )
+
+    total_paise = stats.total if stats and stats.total else 0
+    count = stats.count if stats and stats.count else 0
+
+    return jsonify({
+        "month_invested_paise": int(total_paise),
+        "month_transaction_count": int(count),
+        "month_start_date": start_of_month.isoformat()
+    })

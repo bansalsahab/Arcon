@@ -1,6 +1,4 @@
-####################################
-# ENV / SECRETS (CRITICAL)
-####################################
+
 .env
 .env.*
 instance/
@@ -8,9 +6,6 @@ secrets/
 *.pem
 *.key
 
-####################################
-# PYTHON / FLASK
-####################################
 .venv/
 venv/
 __pycache__/
@@ -18,14 +13,12 @@ __pycache__/
 *.pyo
 *.pyd
 *.sqlite3
+*.db
 .pytest_cache/
 .coverage
 htmlcov/
 migrate_working_dir/
 
-####################################
-# FLUTTER / DART
-####################################
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -37,9 +30,6 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 
-####################################
-# ANDROID
-####################################
 android/.gradle/
 android/local.properties
 android/key.properties
@@ -48,9 +38,7 @@ android/**/GeneratedPluginRegistrant.java
 /android/app/profile
 /android/app/release
 
-####################################
-# IOS / MACOS
-####################################
+
 ios/Pods/
 ios/.symlinks/
 ios/Flutter/ephemeral/
@@ -63,30 +51,20 @@ ios/Runner.xcworkspace
 *.xcscmblueprint
 .DS_Store
 
-####################################
-# NODE / NPM
-####################################
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-####################################
-# DOCKER
-####################################
+
 *.pid
 *.sock
 
-####################################
-# WINDOWS
-####################################
+
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-####################################
-# EDITORS / IDEs
-####################################
 .idea/
 *.iml
 *.ipr
@@ -95,9 +73,7 @@ Desktop.ini
 !.vscode/extensions.json
 !.vscode/settings.json
 
-####################################
-# MISC
-####################################
+
 *.class
 *.log
 *.swp

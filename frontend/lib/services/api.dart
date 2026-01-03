@@ -3,8 +3,20 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class ApiClient {
-  static String get apiBase => dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:5000';
+  // Platform-aware API base URL
+  // Web: localhost, Android: 10.0.2.2 (emulator), iOS: localhost
+  static String get apiBase {
+    if (kIsWeb) {
+      // For web/Chrome
+      return dotenv.env['API_BASE_URL'] ?? 'http://localhost:5000';  
+    } else {
+      // For mobile (Android emulator: 10.0.2.2, iOS: localhost)
+      return dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:5000';
+    }
+  }
 
   static Future<SharedPreferences> _prefs() => SharedPreferences.getInstance();
 
@@ -164,6 +176,14 @@ class ApiClient {
   static Future<Map<String, dynamic>> getSettings() async {
     final res = await http.get(
       Uri.parse('$apiBase/api/user/settings'),
+      headers: await _authHeaders(includeContentType: false),
+    );
+    return _handleResponse(res);
+  }
+
+  static Future<Map<String, dynamic>> getMonthlySummary() async {
+    final res = await http.get(
+      Uri.parse('$apiBase/api/investments/monthly-summary'),
       headers: await _authHeaders(includeContentType: false),
     );
     return _handleResponse(res);

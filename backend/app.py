@@ -10,7 +10,8 @@ def create_app():
     app = Flask(__name__)
     load_dotenv()
     app.config.from_object(Config)
-    CORS(app, supports_credentials=True)
+    # CORS: Allow all origins for development (restrict in production)
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
     app.config["SWAGGER"] = {
         "title": "Roundup Investing API",
         "uiversion": 3,

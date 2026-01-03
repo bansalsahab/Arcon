@@ -1,174 +1,160 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// FinPadi Color Palette (from Figma Design)
-const Color FinPadi_NavyBlue = Color(0xFF1D3A70);       // Primary color
-const Color FinPadi_ActionOrange = Color(0xFFF56C2A);   // Accent/CTA color
-const Color FinPadi_White = Color(0xFFFFFFFF);          // Card backgrounds
-const Color FinPadi_Background = Color(0xFFF8F9FA);     // Light grey background
-const Color FinPadi_TextPrimary = Color(0xFF000000);    // Titles
-const Color FinPadi_TextSecondary = Color(0xFF4F4F4F);  // Body text
-const Color FinPadi_TextLabel = Color(0xFF828282);      // Labels
-const Color FinPadi_Border = Color(0xFFE5E5E5);         // Card borders
-const Color FinPadi_SuccessGreen = Color(0xFF27AE60);   // Success states
-const Color FinPadi_ErrorRed = Color(0xFFEB5757);       // Error states
+// FinPadi Premium Color Palette
+const Color FinPadi_MidnightBlue = Color(0xFF0F172A);   // Primary: Deep richness
+const Color FinPadi_ElectricTeal = Color(0xFF0EA5E9);   // Accent: Vibration & Energy
+const Color FinPadi_SurfaceWhite = Color(0xFFFFFFFF);   // Pure white
+const Color FinPadi_Background = Color(0xFFF8FAFC);     // Very subtle cool grey
+const Color FinPadi_TextPrimary = Color(0xFF1E293B);    // Slate 800
+const Color FinPadi_TextSecondary = Color(0xFF64748B);  // Slate 500
+const Color FinPadi_Border = Color(0xFFE2E8F0);         // Slate 200
+const Color FinPadi_Success = Color(0xFF10B981);        // Emerald 500
+const Color FinPadi_Error = Color(0xFFEF4444);          // Red 500
+
+// Compatibility Aliases (to fix build errors in other files)
+const Color FinPadi_NavyBlue = FinPadi_MidnightBlue;
+const Color FinPadi_ActionOrange = Color(0xFFF97316);   // Orange 500 (kept for mandates screen)
+const Color FinPadi_ErrorRed = FinPadi_Error;
+const Color FinPadi_SuccessGreen = FinPadi_Success;
+const Color FinPadi_TextLabel = FinPadi_TextSecondary;
 
 ThemeData finPadiTheme() {
   return ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.light(
-      primary: FinPadi_NavyBlue,
-      secondary: FinPadi_ActionOrange,
-      surface: FinPadi_White,
-      error: FinPadi_ErrorRed,
+    brightness: Brightness.light,
+    
+    // Color Scheme
+    colorScheme: const ColorScheme(
+      brightness: Brightness.light,
+      primary: FinPadi_MidnightBlue,
       onPrimary: Colors.white,
+      secondary: FinPadi_ElectricTeal,
       onSecondary: Colors.white,
+      error: FinPadi_Error,
+      onError: Colors.white,
+      surface: FinPadi_SurfaceWhite,
       onSurface: FinPadi_TextPrimary,
+      surfaceContainerHighest: FinPadi_Background,
     ),
     scaffoldBackgroundColor: FinPadi_Background,
-    
-    // Typography - Clean modern sans-serif (Inter)
+
+    // Typography: Outfit for headers, Inter for body
     textTheme: TextTheme(
-      displayLarge: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: FinPadi_TextPrimary),
-      displayMedium: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: FinPadi_TextPrimary),
-      headlineMedium: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: FinPadi_TextPrimary),
-      bodyLarge: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.normal, color: FinPadi_TextSecondary),
-      bodyMedium: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.normal, color: FinPadi_TextSecondary),
-      labelLarge: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.normal, color: FinPadi_TextLabel),
-    ),
-    
-    // AppBar Theme
-    appBarTheme: AppBarTheme(
-      backgroundColor: FinPadi_Background,
-      elevation: 0,
-      centerTitle: false,
-      iconTheme: const IconThemeData(color: FinPadi_NavyBlue),
-      titleTextStyle: GoogleFonts.inter(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: FinPadi_TextPrimary,
+      displayLarge: GoogleFonts.outfit(
+        fontSize: 32, fontWeight: FontWeight.bold, color: FinPadi_TextPrimary, letterSpacing: -1.0,
+      ),
+      displayMedium: GoogleFonts.outfit(
+        fontSize: 28, fontWeight: FontWeight.bold, color: FinPadi_TextPrimary, letterSpacing: -0.5,
+      ),
+      headlineMedium: GoogleFonts.outfit(
+        fontSize: 20, fontWeight: FontWeight.w600, color: FinPadi_TextPrimary, letterSpacing: -0.5,
+      ),
+      titleLarge: GoogleFonts.outfit(
+        fontSize: 18, fontWeight: FontWeight.w600, color: FinPadi_TextPrimary,
+      ),
+      bodyLarge: GoogleFonts.inter(
+        fontSize: 16, fontWeight: FontWeight.normal, color: FinPadi_TextSecondary, height: 1.5,
+      ),
+      bodyMedium: GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.normal, color: FinPadi_TextSecondary, height: 1.4,
+      ),
+      labelLarge: GoogleFonts.inter(
+        fontSize: 12, fontWeight: FontWeight.w500, color: FinPadi_TextSecondary, letterSpacing: 0.5,
       ),
     ),
-    
-    // Card Theme - White cards with 16px rounded corners
+
+    // Card Theme: Subtle shadows, pillowy feel
     cardTheme: CardThemeData(
-      color: FinPadi_White,
-      elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.08),
+      color: FinPadi_SurfaceWhite,
+      elevation: 0, // We'll often use manual shadows, but for default:
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
+        side: const BorderSide(color: FinPadi_Border, width: 0.5),
       ),
       margin: const EdgeInsets.symmetric(vertical: 8),
     ),
-    
-    // Elevated Button Theme - Primary Navy Blue
+
+    // Button Theme
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: FinPadi_NavyBlue,
+        backgroundColor: FinPadi_MidnightBlue,
         foregroundColor: Colors.white,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        elevation: 4,
+        shadowColor: FinPadi_MidnightBlue.withOpacity(0.3),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24), // Capsule shape
+          borderRadius: BorderRadius.circular(16),
         ),
-        textStyle: GoogleFonts.inter(
+        textStyle: GoogleFonts.outfit(
           fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
       ),
     ),
-    
+
     // Outlined Button Theme
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: FinPadi_NavyBlue,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        side: const BorderSide(color: FinPadi_NavyBlue, width: 1.5),
+        foregroundColor: FinPadi_MidnightBlue,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+        side: const BorderSide(color: FinPadi_Border, width: 1.5),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
         ),
-        textStyle: GoogleFonts.inter(
+        textStyle: GoogleFonts.outfit(
           fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
       ),
     ),
-    
-    // Text Button Theme
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: FinPadi_NavyBlue,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        textStyle: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
-    
-    // Input Decoration Theme - Minimalist outlined fields
+
+    // Inputs
     inputDecorationTheme: InputDecorationTheme(
-      filled: false,
-      fillColor: FinPadi_White,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      filled: true,
+      fillColor: FinPadi_SurfaceWhite,
+      contentPadding: const EdgeInsets.all(20),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: FinPadi_Border, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: FinPadi_Border),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: FinPadi_Border, width: 1),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: FinPadi_Border),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: FinPadi_NavyBlue, width: 2),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: FinPadi_ElectricTeal, width: 2),
       ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: FinPadi_ErrorRed, width: 1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: FinPadi_ErrorRed, width: 2),
-      ),
-      labelStyle: GoogleFonts.inter(fontSize: 14, color: FinPadi_TextLabel),
-      hintStyle: GoogleFonts.inter(fontSize: 14, color: FinPadi_TextLabel),
-      prefixIconColor: FinPadi_TextLabel,
+      labelStyle: GoogleFonts.inter(color: FinPadi_TextSecondary),
     ),
     
-    // Bottom Navigation Bar Theme
+    // Bottom Nav
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: FinPadi_White,
-      selectedItemColor: FinPadi_NavyBlue,
-      unselectedItemColor: FinPadi_TextLabel,
+      backgroundColor: FinPadi_SurfaceWhite,
+      selectedItemColor: FinPadi_ElectricTeal,
+      unselectedItemColor: FinPadi_TextSecondary,
+      elevation: 10,
       type: BottomNavigationBarType.fixed,
-      elevation: 8,
-      selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-      unselectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
-    ),
-    
-    // Floating Action Button Theme
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
-      backgroundColor: FinPadi_ActionOrange,
-     foregroundColor: Colors.white,
-      elevation: 4,
+      showSelectedLabels: true,
+      showUnselectedLabels: true,
+      selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+      unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
     ),
   );
 }
 
-// Backward compatibility mappings for existing screens
-// Maps old Banking_ constants to new FinPadi constants
-const Color Banking_Primary = FinPadi_NavyBlue;
-const Color Banking_Secondary = Color(0xFF2A4A85); // Slightly lighter navy
-const Color Banking_Accent = FinPadi_ActionOrange;
+// Backward Compatibility / Aliases
+const Color Banking_Primary = FinPadi_MidnightBlue;
+const Color Banking_Secondary = Color(0xFF1E293B); // Slate 800
+const Color Banking_Accent = FinPadi_ElectricTeal;
 const Color Banking_app_Background = FinPadi_Background;
-const Color Banking_Surface = FinPadi_White;
+const Color Banking_Surface = FinPadi_SurfaceWhite;
 const Color Banking_Border = FinPadi_Border;
 const Color Banking_TextColorPrimary = FinPadi_TextPrimary;
 const Color Banking_TextColorSecondary = FinPadi_TextSecondary;
-const Color Banking_SuccessGreen = FinPadi_SuccessGreen;
-const Color Banking_ErrorRed = FinPadi_ErrorRed;
-const Color Banking_WarningYellow = Color(0xFFF2994A);
+const Color Banking_SuccessGreen = FinPadi_Success;
+const Color Banking_ErrorRed = FinPadi_Error;
+const Color Banking_WarningYellow = Color(0xFFF59E0B); // Amber 500
 
-/// Legacy theme function for backward compatibility
 ThemeData bankingTheme() => finPadiTheme();

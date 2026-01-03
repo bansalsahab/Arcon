@@ -12,8 +12,8 @@ class Config:
     MF_PROVIDER = os.environ.get("MF_PROVIDER", "mock")
     GOLD_PROVIDER = os.environ.get("GOLD_PROVIDER", "mock")
     PROVIDER_USE_ORDERS = os.environ.get("PROVIDER_USE_ORDERS", "false").lower() == "true"
-    RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID")
-    RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET")
+    PAY_KEY_ID = os.environ.get("PAY_KEY_ID")
+    PAY_KEY_SECRET = os.environ.get("PAY_KEY_SECRET")
     CASHFREE_CLIENT_ID = os.environ.get("CASHFREE_CLIENT_ID")
     CASHFREE_CLIENT_SECRET = os.environ.get("CASHFREE_CLIENT_SECRET")
     MFU_CLIENT_ID = os.environ.get("MFU_CLIENT_ID")
@@ -21,4 +21,4 @@ class Config:
     BSESTAR_MF_MEMBER_ID = os.environ.get("BSESTAR_MF_MEMBER_ID")
     BSESTAR_MF_PASSWORD = os.environ.get("BSESTAR_MF_PASSWORD")
     SAFEGOLD_API_TOKEN = os.environ.get("SAFEGOLD_API_TOKEN")
-    RAZORPAY_WEBHOOK_SECRET = os.environ.get("RAZORPAY_WEBHOOK_SECRET")
+    PAY_WEBHOOK_SECRET = os.environ.get("PAY_WEBHOOK_SECRET")

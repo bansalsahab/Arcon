@@ -125,43 +125,55 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
   @override
   Widget build(BuildContext context) {
     final total = _pending + _invested;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Banking_app_Background,
+      backgroundColor: FinPadi_Background,
       appBar: AppBar(
-        title: Text('My Portfolio', style: GoogleFonts.outfit(color: Banking_TextColorPrimary, fontWeight: FontWeight.bold)),
-        backgroundColor: Banking_app_Background,
+        title: Text('My Portfolio', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        backgroundColor: FinPadi_Background,
         centerTitle: true,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Banking_TextColorPrimary),
+        iconTheme: const IconThemeData(color: FinPadi_MidnightBlue),
         actions: [
-          IconButton(
-            onPressed: _loading ? null : _showRedeemDialog,
-            icon: const Icon(Icons.outbound_outlined),
-            tooltip: 'Redeem',
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+               boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: IconButton(
+              onPressed: _loading ? null : _showRedeemDialog,
+              icon: const Icon(Icons.outbound_rounded, size: 20),
+              color: FinPadi_TextSecondary,
+              tooltip: 'Redeem Funds',
+            ),
           )
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           children: [
-            // Total Value Card
+            // Total Value Card (Hero)
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Banking_Primary, Banking_Accent],
+                  colors: [FinPadi_MidnightBlue, Color(0xFF1E293B)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Banking_Primary.withOpacity(0.4),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
+                    color: FinPadi_MidnightBlue.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -171,25 +183,39 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Total Value',
-                        style: GoogleFonts.outfit(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                       Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.pie_chart_outline, color: FinPadi_ElectricTeal, size: 16),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Total Value',
+                            style: GoogleFonts.inter(
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: FinPadi_ElectricTeal.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: FinPadi_ElectricTeal.withOpacity(0.3)),
                         ),
                         child: Text(
                           _riskTier.toUpperCase(),
                           style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 11,
+                            color: FinPadi_ElectricTeal,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
                           ),
@@ -197,22 +223,37 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 24),
                   _loading
                       ? const SizedBox(
                           height: 48,
                           width: 48,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : Text(
-                          _fmt.format(total / 100.0),
-                          style: GoogleFonts.outfit(
-                            color: Colors.white,
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
+                      : RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '₹',
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              TextSpan(
+                                text: _fmt.format(total / 100.0).replaceAll('₹', ''),
+                                style: GoogleFonts.outfit(
+                                  color: Colors.white,
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   Row(
                     children: [
                       Expanded(
@@ -221,7 +262,7 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
                           children: [
                             Text(
                               'Invested',
-                              style: GoogleFonts.outfit(color: Colors.white.withOpacity(0.7), fontSize: 13),
+                              style: GoogleFonts.inter(color: Colors.white.withOpacity(0.6), fontSize: 13),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -231,7 +272,7 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
                           ],
                         ),
                       ),
-                      Container(width: 1, height: 40, color: Colors.white.withOpacity(0.2)),
+                      Container(width: 1, height: 40, color: Colors.white.withOpacity(0.1)),
                       const SizedBox(width: 24),
                       Expanded(
                         child: Column(
@@ -239,7 +280,7 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
                           children: [
                             Text(
                               'Pending Roundups',
-                              style: GoogleFonts.outfit(color: Colors.white.withOpacity(0.7), fontSize: 13),
+                              style: GoogleFonts.inter(color: Colors.white.withOpacity(0.6), fontSize: 13),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -254,22 +295,25 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Asset Allocation Chart
             _buildSectionHeader('Asset Allocation'),
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Banking_Border),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: FinPadi_Border.withOpacity(0.5)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
               ),
               child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: Banking_Primary))
+                  ? const Center(child: CircularProgressIndicator(color: FinPadi_MidnightBlue))
                   : PortfolioChart(positions: _positions),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Holdings List
             _buildSectionHeader('Holdings'),
@@ -292,26 +336,38 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
               message:
                   'Digital gold investments are not regulated by SEBI. Please ensure you understand the risks involved.',
               icon: Icons.warning_amber_rounded,
-              color: Banking_WarningYellow,
+              color: Color(0xFFB45309), // Amber 700
             ),
             
             const SizedBox(height: 24),
-            Divider(color: Banking_Border),
+            Divider(color: FinPadi_Border),
             const SizedBox(height: 24),
 
             // Investment Orders
             _buildSectionHeader('Recent Orders'),
             if (_loading && _orders.isEmpty) ...Skeleton.tiles(3)
-            else if (_orders.isEmpty) const Text('No investment orders yet.')
+            else if (_orders.isEmpty) 
+               Container(
+                 width: double.infinity,
+                 padding: const EdgeInsets.all(20),
+                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                 child: Text('No investment orders yet.', style: GoogleFonts.inter(color: FinPadi_TextSecondary))
+               )
             else ..._orders.take(5).map((o) => _buildOrderItem(o)),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             _buildSectionHeader('Redemptions'),
             if (_loading && _redemptions.isEmpty) ...Skeleton.tiles(3)
-            else if (_redemptions.isEmpty) const Text('No redemptions yet.')
+            else if (_redemptions.isEmpty) 
+              Container(
+                 width: double.infinity,
+                 padding: const EdgeInsets.all(20),
+                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                 child: Text('No redemptions yet.', style: GoogleFonts.inter(color: FinPadi_TextSecondary))
+               )
             else ..._redemptions.take(5).map((r) => _buildRedemptionItem(r)),
             
-            const SizedBox(height: 40),
+            const SizedBox(height: 48),
           ],
         ),
       ),
@@ -320,13 +376,13 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      padding: const EdgeInsets.only(bottom: 16, left: 4),
       child: Text(
         title,
         style: GoogleFonts.outfit(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Banking_TextColorPrimary,
+          color: FinPadi_MidnightBlue,
         ),
       ),
     );
@@ -337,22 +393,22 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Banking_Border),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FinPadi_Border),
       ),
       child: Center(
         child: Column(
           children: [
-            Icon(icon, size: 48, color: Banking_TextColorSecondary.withOpacity(0.3)),
+            Icon(icon, size: 48, color: FinPadi_TextSecondary.withOpacity(0.3)),
             const SizedBox(height: 12),
             Text(
               message,
-              style: GoogleFonts.outfit(color: Banking_TextColorSecondary, fontSize: 16),
+              style: GoogleFonts.outfit(color: FinPadi_TextSecondary, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
               subMessage,
-              style: GoogleFonts.outfit(color: Banking_TextColorSecondary.withOpacity(0.7), fontSize: 13),
+              style: GoogleFonts.inter(color: FinPadi_TextSecondary.withOpacity(0.7), fontSize: 13),
             ),
           ],
         ),
@@ -371,16 +427,16 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
     Color color;
     if (k.toLowerCase().contains('equity')) {
       icon = Icons.trending_up;
-      color = Banking_Accent;
+      color = FinPadi_ElectricTeal;
     } else if (k.toLowerCase().contains('debt')) {
       icon = Icons.security;
-      color = Banking_Secondary;
+      color =  const Color(0xFF6366F1); // Indigo
     } else if (k.toLowerCase().contains('gold')) {
       icon = Icons.diamond_outlined;
-      color = const Color(0xFFFFD700); // Gold color
+      color = const Color(0xFFF59E0B); // Gold/Amber
     } else {
       icon = Icons.category_outlined;
-      color = Banking_SuccessGreen;
+      color = FinPadi_Success;
     }
 
     return Container(
@@ -388,8 +444,8 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Banking_Border.withOpacity(0.6)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: FinPadi_Border.withOpacity(0.5)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -404,7 +460,7 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 24),
           ),
@@ -415,16 +471,16 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
               children: [
                 Text(
                   k,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: Banking_TextColorPrimary,
+                    fontSize: 15,
+                    color: FinPadi_MidnightBlue,
                   ),
                 ),
                 Text(
                   '$percentage% of portfolio',
-                  style: GoogleFonts.outfit(
-                    color: Banking_TextColorSecondary,
+                  style: GoogleFonts.inter(
+                    color: FinPadi_TextSecondary,
                     fontSize: 12,
                   ),
                 ),
@@ -436,7 +492,7 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
             style: GoogleFonts.outfit(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Banking_TextColorPrimary,
+              color: FinPadi_MidnightBlue,
             ),
           ),
         ],
@@ -452,22 +508,22 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
     final at = m['created_at']?.toString() ?? '';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Banking_Border.withOpacity(0.6)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: FinPadi_Border.withOpacity(0.5)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Banking_SuccessGreen.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: FinPadi_Success.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.check_circle_outline, color: Banking_SuccessGreen, size: 18),
+            child: const Icon(Icons.check_circle_outline, color: FinPadi_Success, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -475,18 +531,18 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${pt.toUpperCase()} Buy',
-                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 14),
+                  '${pt.toUpperCase()} Purchase',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: FinPadi_MidnightBlue),
                 ),
-                Text(at, style: GoogleFonts.outfit(color: Banking_TextColorSecondary, fontSize: 11)),
+                Text(at, style: GoogleFonts.inter(color: FinPadi_TextSecondary, fontSize: 11)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(_fmt.format(amt/100.0), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14)),
-              Text(status.toUpperCase(), style: GoogleFonts.outfit(color: Banking_SuccessGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+              Text(_fmt.format(amt/100.0), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15, color: FinPadi_MidnightBlue)),
+              Text(status.toUpperCase(), style: GoogleFonts.outfit(color: FinPadi_Success, fontSize: 10, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -500,22 +556,22 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
     final at = r['created_at']?.toString() ?? '';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Banking_Border.withOpacity(0.6)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: FinPadi_Border.withOpacity(0.5)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Banking_Secondary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: FinPadi_MidnightBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.outbound, color: Banking_Secondary, size: 18),
+            child: const Icon(Icons.outbound, color: FinPadi_MidnightBlue, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -524,13 +580,13 @@ class _PortfolioScreenEnhancedState extends State<PortfolioScreenEnhanced> {
               children: [
                 Text(
                   'Withdrawal',
-                  style: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: FinPadi_MidnightBlue),
                 ),
-                Text(at, style: GoogleFonts.outfit(color: Banking_TextColorSecondary, fontSize: 11)),
+                Text(at, style: GoogleFonts.inter(color: FinPadi_TextSecondary, fontSize: 11)),
               ],
             ),
           ),
-          Text(_fmt.format(amt/100.0), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(_fmt.format(amt/100.0), style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15, color: FinPadi_MidnightBlue)),
         ],
       ),
     );
